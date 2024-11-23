@@ -6,6 +6,8 @@ from datetime import datetime
 from openai import OpenAI
 import logging
 import json
+import os
+from secrets_manager import get_service_secrets
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -15,16 +17,22 @@ logging.basicConfig(level=logging.INFO,
 app = Flask(__name__)
 CORS(app)
 
-C_PORT = 5011
+secrets = get_service_secrets('gnosis-profiles')
 
-# Database configurations
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:TZpD7nR0nTnYYNQR6BKN@database-profiles.c1qcm4w2sbne.us-east-1.rds.amazonaws.com:3306/social_profiles'
+C_PORT = int(secrets.get('PORT', 5000))
+SQLALCHEMY_DATABASE_URI = (
+    f"mysql+pymysql://{secrets['MYSQL_USER']}:{secrets['MYSQL_PASSWORD_PROFILES']}"
+    f"@{secrets['MYSQL_HOST']}:{secrets['MYSQL_PORT']}/{secrets['MYSQL_DATABASE']}"
+)
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-QUERY_API_URL = 'http://localhost:5009'
+QUERY_API_URL = secrets.get('QUERY_API_URL')
+
+OPENAI_API_KEY = secrets.get('OPENAI_API_KEY')
 
 # Initialize OpenAI client
-client = OpenAI()
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 db = SQLAlchemy(app)
 

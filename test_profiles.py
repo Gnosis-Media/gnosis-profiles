@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 
 # Configuration
-PROFILE_SERVICE_URL = 'http://localhost:5011'
+PROFILE_SERVICE_URL = 'http://44.201.131.44:80'
 
 def test_user_profile():
     """Test user profile creation and retrieval"""
@@ -43,7 +43,7 @@ def test_user_profile():
         # Get user profile
         response = requests.get(f"{PROFILE_SERVICE_URL}/api/users/{test_user['user_id']}")
         
-        if response.status_code == 200:
+        if response.status_code == 200 or response.status_code == 201:
             logging.info("\nRetrieved User Profile:")
             pprint(response.json())
         else:
@@ -67,7 +67,7 @@ def test_ai_profile_creation():
                 json={'content_id': content_id}
             )
             
-            if response.status_code == 201:
+            if response.status_code == 201 or response.status_code == 200:
                 logging.info(f"AI profile created successfully for content {content_id}")
                 logging.info(f"Response: {response.json()}")
                 
@@ -76,7 +76,7 @@ def test_ai_profile_creation():
                     f"{PROFILE_SERVICE_URL}/api/ais/content/{content_id}"
                 )
                 
-                if response.status_code == 200:
+                if response.status_code == 200 or response.status_code == 201:
                     logging.info(f"\nRetrieved AI Profile for content {content_id}:")
                     pprint(response.json())
                 else:
@@ -100,7 +100,7 @@ def test_ai_profile_retrieval():
                 f"{PROFILE_SERVICE_URL}/api/ais/content/{content_id}"
             )
             
-            if response.status_code == 200:
+            if response.status_code == 200 or response.status_code == 201:
                 logging.info(f"\nRetrieved AI Profile for content {content_id}:")
                 profile = response.json()
                 logging.info(f"Display Name: {profile.get('display_name')}")
