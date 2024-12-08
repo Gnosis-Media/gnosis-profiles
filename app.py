@@ -29,6 +29,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 QUERY_API_URL = secrets.get('QUERY_API_URL')
 
+API_KEY = secrets.get('API_KEY')
+
 OPENAI_API_KEY = secrets.get('OPENAI_API_KEY')
 
 # Initialize OpenAI client
@@ -175,7 +177,8 @@ def create_or_update_ai():
         is_update = ai is not None
         
         # Get content information by querying gnosis-query
-        content_response = requests.get(f'{QUERY_API_URL}/api/content/{content_id}')
+        headers = {'X-API-KEY': API_KEY}
+        content_response = requests.get(f'{QUERY_API_URL}/api/content/{content_id}', headers=headers)
         if content_response.status_code != 200:
             return jsonify({'error': 'Content not found'}), 404
         
@@ -260,6 +263,24 @@ def get_ai_by_content(content_id):
     except Exception as e:
         logging.error(f"Error getting AI profile: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
+# add middleware
+@app.before_request
+def log_request_info():
+    logging.info(f"Headers: {request.headers}")
+    logging.info(f"Body: {request.get_data()}")
+
+    # for now just check that it has a Authorization header
+    if 'X-API-KEY' not in request.headers:
+        logging.warning("No X-API-KEY header")
+        return jsonify({'error': 'No X-API-KEY'}), 401
+    
+    x_api_key = request.headers.get('X-API-KEY')
+    if x_api_key != API_KEY:
+        logging.warning("Invalid X-API-KEY")
+        return jsonify({'error': 'Invalid X-API-KEY'}), 401
+    else:
+        return
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=C_PORT)
