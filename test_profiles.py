@@ -2,6 +2,7 @@ import requests
 import logging
 from pprint import pprint
 from datetime import datetime
+from secrets_manager import get_service_secrets
 
 # Configure logging
 logging.basicConfig(
@@ -11,7 +12,9 @@ logging.basicConfig(
 )
 
 # Configuration
-PROFILE_SERVICE_URL = 'http://44.201.131.44:80'
+PROFILE_SERVICE_URL = 'http://44.204.146.40:80'
+secrets = get_service_secrets('gnosis-profiles')
+API_KEY = secrets.get('API_KEY')
 
 def test_user_profile():
     """Test user profile creation and retrieval"""
@@ -31,17 +34,22 @@ def test_user_profile():
         # Create user profile
         response = requests.post(
             f"{PROFILE_SERVICE_URL}/api/users",
-            json=test_user
+            json=test_user,
+            headers={'X-API-KEY': API_KEY}
         )
+        logging.info(f"Response Status Code: {response.status_code}")
         
         if response.status_code == 201:
             logging.info("User profile created successfully")
             logging.info(f"Response: {response.json()}")
-        else:
+        else:            
             logging.error(f"Failed to create user profile: {response.json()}")
             
         # Get user profile
-        response = requests.get(f"{PROFILE_SERVICE_URL}/api/users/{test_user['user_id']}")
+        response = requests.get(
+            f"{PROFILE_SERVICE_URL}/api/users/{test_user['user_id']}", 
+            headers={'X-API-KEY': API_KEY}
+        )
         
         if response.status_code == 200 or response.status_code == 201:
             logging.info("\nRetrieved User Profile:")
@@ -56,7 +64,7 @@ def test_ai_profile_creation():
     """Test AI profile creation and retrieval for specific content"""
     
     # Test with content IDs 29 and 30
-    content_ids = [29, 30]
+    content_ids = [12, 13]
     
     for content_id in content_ids:
         logging.info(f"\nTesting AI Profile Creation for Content ID {content_id}:")
@@ -64,7 +72,8 @@ def test_ai_profile_creation():
             # Create AI profile
             response = requests.post(
                 f"{PROFILE_SERVICE_URL}/api/ais",
-                json={'content_id': content_id}
+                json={'content_id': content_id},
+                headers={'X-API-KEY': API_KEY}
             )
             
             if response.status_code == 201 or response.status_code == 200:
@@ -73,9 +82,10 @@ def test_ai_profile_creation():
                 
                 # Get AI profile
                 response = requests.get(
-                    f"{PROFILE_SERVICE_URL}/api/ais/content/{content_id}"
+                    f"{PROFILE_SERVICE_URL}/api/ais/content/{content_id}",
+                    headers={'X-API-KEY': API_KEY}
                 )
-                
+                logging.info(f"Response Status Code: {response.status_code}")
                 if response.status_code == 200 or response.status_code == 201:
                     logging.info(f"\nRetrieved AI Profile for content {content_id}:")
                     pprint(response.json())
@@ -97,9 +107,10 @@ def test_ai_profile_retrieval():
     for content_id in content_ids:
         try:
             response = requests.get(
-                f"{PROFILE_SERVICE_URL}/api/ais/content/{content_id}"
+                f"{PROFILE_SERVICE_URL}/api/ais/content/{content_id}",
+                headers={'X-API-KEY': API_KEY}
             )
-            
+            logging.info(f"Response Status Code: {response.status_code}")
             if response.status_code == 200 or response.status_code == 201:
                 logging.info(f"\nRetrieved AI Profile for content {content_id}:")
                 profile = response.json()
